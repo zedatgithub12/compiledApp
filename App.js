@@ -78,6 +78,7 @@ export default function App() {
     locationLongitude: "",
     contactPhone: "",
     redirectLink: "",
+    imageStatus: false,
   });
   const [user, setUser] = React.useState({
     userId: "",
@@ -188,13 +189,14 @@ export default function App() {
       phone: user.phone,
       status: user.status,
     },
-    formOne: async (image, eventName, eventDesc) => {
+    formOne: async (image, eventName, eventDesc,poster) => {
       if (image == image && eventName == eventName && eventDesc == eventDesc) {
         setEventInfo({
           ...eventInfo,
           eventTitle: eventName,
           eventDescription: eventDesc,
           featuredImage: image,
+          imageStatus: poster,
         });
       }
     },
@@ -398,6 +400,7 @@ export default function App() {
           justifyContent: "center",
           alignItems: "center",
           backgroundColor: "#292b2c",
+          paddingBottom: 40,
         }}
       >
         <Animatable.Image

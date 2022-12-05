@@ -21,9 +21,9 @@ import OrgShimmer from "../Components/orgShimmer";
 import SkeletonPlaceholder from "react-native-skeleton-placeholder";
 
 // create a component
-const YourEvents = ({ route, navigation }) => {
-  const { count } = route.params;
+const YourEvents = ({ navigation }) => {
 
+  const [load, setLoad] = React.useState(false);
   const [events, setEvents] = useState();
   const [message, setMessage] = useState();
   const [notFound, setNotFound] = useState(false);
@@ -121,18 +121,22 @@ const YourEvents = ({ route, navigation }) => {
       time={TimeFun(item.start_time)}
       venue={item.event_address}
       Price={EntranceFee(item.event_entrance_fee)}
-      onPress={() => navigation.navigate("EventDetail", { item })}
+      onPress={() => navigation.navigate("YoursDetail", { item })}
     />
   );
   const refreshed = () => ToastAndroid.show(refStatus, ToastAndroid.SHORT);
   // refresh the flatlist item
   const RefreshList = async () => {
+
+    const controller = new AbortController();
+    const signal = controller.signal;
+
     var userId = await AsyncStorage.getItem("userId");
     setLoading(false);
     // featching abort controller
     // after featching events the fetching function will be aborted
 
-    let isApiSubscribed = true;
+   
     var ApiUrl = Connection.url + Connection.YourEvents;
     //The event happening today is fetched on the useEffect function called which is componentDidMuount in class component
     var headers = {
@@ -148,11 +152,11 @@ const YourEvents = ({ route, navigation }) => {
       method: "POST",
       headers: headers,
       body: JSON.stringify(Data),
+      signal:signal
     })
       .then((response) => response.json()) //check response type of the API
       .then((response) => {
-        if (isApiSubscribed) {
-          // handle success
+  
           var message = response[0].message;
 
           if (message === "succeed") {
@@ -168,79 +172,135 @@ const YourEvents = ({ route, navigation }) => {
           } else {
             setLoading(false);
           }
-        }
+        
       })
       .catch((err) => {
         setLoading(false);
       });
 
     return () => {
-      // cancel the subscription
-      isApiSubscribed = false;
+      controller.abort();
     };
   };
 
+
+  const [count, setCount] = useState(0);
+
+  const featchUserInformation = async () => {
+    const Controller = new AbortController();
+    const Signal = Controller.signal;
+
+    var fetchIt = true;
+    var id = await AsyncStorage.getItem("userId");
+    var Data = {
+      id: id,
+    };
+    var ApiUrl = Connection.url + Connection.userInfo;
+    var headers = {
+      Accept: "application/json",
+      "Content-Type": "application/json",
+    };
+    fetch(ApiUrl, {
+      method: "POST",
+      body: JSON.stringify(Data),
+      headers: headers,
+      signal: Signal,
+    })
+      .then((response) => response.json())
+      .then((response) => {
+        var serverResponse = response[0].message;
+        if (fetchIt) {
+          if (serverResponse === "succeed") {
+            var eventPostedCount = response[0].events;
+            setCount(eventPostedCount);
+            setLoad(true);
+          } else {
+            setLoad(false);
+          }
+        }
+      })
+      .catch((err) => {
+        setLoad(false);
+      });
+    return () => {
+      fetchIt = false;
+      Controller.abort();
+    };
+  };
   useEffect(() => {
-    RefreshList();
-    return () => {};
+    let isApiSubscribed = true;
+
+    if (isApiSubscribed) {
+      RefreshList();
+      featchUserInformation();
+    }
+
+    return () => {
+      isApiSubscribed = false;
+    };
   }, []);
 
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView>
-        <View>
-          <TouchableOpacity
-            style={styles.backArrow} // back arrow button style
-            onPress={() => navigation.goBack()}
-          >
-            <Ionicons
-              name="arrow-back-sharp"
-              size={25}
-              //back arrow icon
-            />
-          </TouchableOpacity>
-          <View style={styles.headerContainer}>
-            <Text style={styles.Title}>Your Events</Text>
-            {loading ? (
-              <Text style={styles.eventCount}>{count}</Text>
-            ) : (
-              <SkeletonPlaceholder>
-                <View
-                  style={{ width: 45, height: 30, borderRadius: 3, padding: 7 }}
-                />
-              </SkeletonPlaceholder>
-            )}
-          </View>
-        </View>
-        {loading ? (
-          <View>
-            {events.map((item) => (
-              <YourE
-                key={item.event_id}
-                Event_Id={item.event_id}
-                status={renderStatus(item.event_status)}
-                org_id={item.userId}
-                FeaturedImage={item.event_image}
-                title={item.event_name}
-                date={DateFun(item.start_date)}
-                time={TimeFun(item.start_time)}
-                venue={item.event_address}
-                Price={EntranceFee(item.event_entrance_fee)}
-                onPress={() => navigation.navigate("YoursDetail", { item })}
+      <View>
+        <TouchableOpacity
+          style={styles.backArrow} // back arrow button style
+          onPress={() => navigation.goBack()}
+        >
+          <Ionicons
+            name="arrow-back-sharp"
+            size={25}
+            //back arrow icon
+          />
+        </TouchableOpacity>
+        <View style={styles.headerContainer}>
+          <Text style={styles.Title}>Your Events</Text>
+          {loading ? (
+            <Text style={styles.eventCount}>{count}</Text>
+          ) : (
+            <SkeletonPlaceholder>
+              <View
+                style={{ width: 45, height: 30, borderRadius: 3, padding: 7 }}
               />
-            ))}
-          </View>
-        ) : (
-          <View>
-            <OrgShimmer />
-            <OrgShimmer />
-            <OrgShimmer />
-            <OrgShimmer />
-            <OrgShimmer />
-            <OrgShimmer />
-          </View>
-        )}
-      </ScrollView>
+            </SkeletonPlaceholder>
+          )}
+        </View>
+      </View>
+      {loading ? (
+        <FlatList
+          // List of events in extracted from database in the form JSON data
+          data={events}
+          renderItem={renderItem}
+          keyExtractor={(item) => item.event_id}
+          onRefresh={RefreshList}
+          refreshing={refreshing}
+          // when ithere is no item to be listed in flatlist
+          ListHeaderComponent={() =>
+            notFound ? (
+              <View style={styles.container}>
+                <Image
+                  source={require("../assets/NotFound.png")}
+                  resizeMode="contain"
+                  style={styles.notFound}
+                />
+                <Text style={styles.emptyMessageStyle}>{message}</Text>
+                <HelperText style={{ alignSelf: "center" }}>
+                  You can add events using plus icon in the home page
+                </HelperText>
+              </View>
+            ) : null
+          }
+        />
+      ) : (
+        <View>
+          <OrgShimmer />
+          <OrgShimmer />
+          <OrgShimmer />
+          <OrgShimmer />
+          <OrgShimmer />
+          <OrgShimmer />
+        </View>
+      )}
     </SafeAreaView>
   );
 };
