@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "place to be Ethiopia",
+    "name": "Place to be Ethiopia",
     "slug": "placetobe",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -19,7 +19,8 @@
       "**/*"
     ],
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.afromina.placetobe"
     },
     "android": {
       "package": "com.afromina.placetobe",
