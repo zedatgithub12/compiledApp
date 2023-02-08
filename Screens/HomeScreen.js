@@ -374,6 +374,21 @@ function Home({ navigation, ...props }) {
           //to component container
           // profile avatar, App name and serach is included inside the component
           style={styles.headers}
+
+    
+        <View style={styles.brands}>
+          <Image
+            source={require("../assets/homebranding.png")}
+            resizeMode="cover"
+            style={{ width: 152, height: 70 }}
+          />
+        </View>
+
+        <TouchableOpacity
+          activeOpacity={0.8}
+          style={styles.searchBtn}
+          onPress={() => navigation.push("Eventcat")}
+
         >
           <View style={styles.brands}>
             <Image

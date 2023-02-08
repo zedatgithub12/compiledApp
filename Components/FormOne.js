@@ -409,6 +409,7 @@ const styles = StyleSheet.create({
     borderRadius: Constants.mediumbox,
     padding: 8,
     borderWidth: 0.5,
+
   },
   eventDescription: {
     width: "90%",

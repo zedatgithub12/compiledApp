@@ -126,9 +126,7 @@ const Followers = ({ navigation }) => {
                 style={styles.notFound}
               />
               <Text style={styles.emptyMessageStyle}>No Followers yet!</Text>
-              <HelperText style={{ alignSelf: "center" }}>
-                To get notification of event follow some organizer!
-              </HelperText>
+       
             </View>
           ) : null
         }

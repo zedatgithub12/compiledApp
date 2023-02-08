@@ -426,6 +426,7 @@ export default function App() {
           alignItems: "center",
           backgroundColor: "#292b2c",
           paddingBottom: 30,
+
         }}
       >
         <Animatable.Image

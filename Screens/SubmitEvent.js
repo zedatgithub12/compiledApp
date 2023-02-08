@@ -119,8 +119,6 @@ this.setState({posting:true});
       var organizerPhone = (this.state.contactPhone = InputForm.cPhone);
       var redirectUrl = (this.state.redirectLink = InputForm.url);
       var Poster = (this.state.PosterStatus = InputForm.imageStatus);
-       
-
      
       // event field validation
       if (
@@ -144,6 +142,7 @@ this.setState({posting:true});
         errorPanel(poster);
         this.setState({posting:false});
       }
+
        else {
         // After this we initiate featch method to send user data to database
         var InsertAPIUrl = Connection.url + Connection.AddEvent;
