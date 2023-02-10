@@ -701,7 +701,7 @@ const EventDetails = ({ route, navigation }) => {
               </TouchableOpacity>
             ) : null}
           </View>
-
+  
           {featching ? (
             <View
               style={styles.organizersSection}
