@@ -9,7 +9,6 @@ import {
   Pressable,
   ActivityIndicator,
   ToastAndroid,
-  TouchableNativeFeedback,
 } from "react-native";
 import { ScrollView } from "react-native-gesture-handler";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -30,7 +29,13 @@ import Share from "react-native-share";
 import SkeletonPlaceholder from "react-native-skeleton-placeholder";
 import * as Animatable from "react-native-animatable";
 import DetailShimmer from "../Components/DetailShimmer";
-import MapView from "react-native-maps";
+import MapView, {
+  PROVIDER_GOOGLE,
+  GoogleMaps,
+  Callout,
+} from "react-native-maps";
+// import MapView from "react-native-maps";
+import { Marker } from "react-native-maps";
 
 const EventDetails = ({ route, navigation }) => {
   const params = route.params || {};
@@ -44,16 +49,33 @@ const EventDetails = ({ route, navigation }) => {
   const [item, setItem] = useState({});
   const [loading, setLoading] = useState(true);
 
-  const date = new Date();
-  var hour = date.getHours();
-  var minute = date.getMinutes();
+  // const date = new Date();
+  // var hour = date.getHours();
+  // var minute = date.getMinutes();
 
-  var Timing = hour + ":" + minute;
+  // var Timing = hour + ":" + minute;
 
   const [timing, setTime] = useState({
     StartTime: "",
     EndTime: "",
   });
+  /********************************************** */
+  // the method  which checks the existance of event address coordinates and
+  // update the state to show or hide event address map
+  /******************************************** */
+  const [coords, setCoords] = useState(true);
+
+  const checkCoords = (latlng) => {
+    if (latlng.address_latitude == 0 && latlng.address_longitude == 0) {
+      setCoords(false);
+    }
+  };
+
+  /******************************************** */
+  //let fetch event detail from database and we access the value returned in the json format
+  //and distrube it through the scree
+  /****************************************** */
+
   const FeatchEvent = () => {
     if (externalLink) {
       setLoading(true);
@@ -83,13 +105,13 @@ const EventDetails = ({ route, navigation }) => {
 
           if (message === "succeed") {
             setItem(event);
-
             setTime({
               ...timing,
               StartTime: start,
               EndTime: end,
             });
             setLoading(false);
+            checkCoords(event);
           } else {
             //setLoading(true);
             console.log("There is miss understanding with backend iternal");
@@ -137,6 +159,7 @@ const EventDetails = ({ route, navigation }) => {
             });
 
             setLoading(false);
+            checkCoords(event);
           } else {
             //setLoading(true);
             console.log("There is miss understanding with backend");
@@ -208,7 +231,7 @@ const EventDetails = ({ route, navigation }) => {
   /******************************************* */
   //event Sharing functionality related code is writen below
   /******************************************* */
-  const ShareEvent = async () => {
+  const ShareEvent = async (eventId) => {
     let remoteUrl = featuredImageUri + item.event_image; //file path on the server
     let event_image = item.event_image; //name of image to be shared
 
@@ -218,7 +241,7 @@ const EventDetails = ({ route, navigation }) => {
     const doesExist = await FileSystem.getInfoAsync(localPath);
 
     var weblink = Constants.webLink;
-
+    // var urlAddress = Connection.url+"/"+Connection.Event+"/"+eventId;
     const shareOptions = {
       url: localPath,
       title: item.event_name,
@@ -667,7 +690,7 @@ const EventDetails = ({ route, navigation }) => {
               <TouchableOpacity
                 style={styles.sharekButton}
                 activeOpacity={0.7}
-                onPress={() => ShareEvent()}
+                onPress={() => ShareEvent(item.event_id)}
 
                 // share event button
               >
@@ -701,7 +724,48 @@ const EventDetails = ({ route, navigation }) => {
               </TouchableOpacity>
             ) : null}
           </View>
-  
+
+          {coords ? (
+            <View style={styles.mapContainer}>
+              <View style={styles.mapInfo}>
+                <Text style={styles.location}>Location</Text>
+                <Text style={styles.venueOnMap} numberOfLines={1}>
+                  {item.event_address}
+                </Text>
+              </View>
+              <MapView
+                provider={PROVIDER_GOOGLE}
+                mapType="standard"
+                userInterfaceStyle="dark"
+                minZoomLevel={16}
+                maxZoomLevel={20}
+                loadingEnabled={true}
+                loadingBackgroundColor={Constants.Faded}
+                loadingIndicatorColor={Constants.primary}
+                tintColor={Constants.primary}
+                userLocationCalloutEnabled={true}
+                style={[styles.map]}
+                initialRegion={{
+                  latitude: parseFloat(item.address_latitude),
+                  longitude: parseFloat(item.address_longitude),
+                  latitudeDelta: 0.0922,
+                  longitudeDelta: 0.0421,
+                }}
+              >
+                <Marker
+                  coordinate={{
+                    latitude: parseFloat(item.address_latitude),
+                    longitude: parseFloat(item.address_longitude),
+                  }}
+                  image={{
+                    uri: "https://www.google.com/url?sa=i&url=https%3A%2F%2Fwww.pngwing.com%2Fen%2Fsearch%3Fq%3Dmap%2BMarker&psig=AOvVaw1sWuU_lBSs-5sii34I1Nz_&ust=1676116422134000&source=images&cd=vfe&ved=0CBAQjRxqFwoTCLDxkLXyiv0CFQAAAAAdAAAAABAF",
+                  }}
+                />
+                <Callout tooltip={true} />
+              </MapView>
+            </View>
+          ) : null}
+
           {featching ? (
             <View
               style={styles.organizersSection}
@@ -762,6 +826,7 @@ const EventDetails = ({ route, navigation }) => {
                   )}
                 </TouchableOpacity>
               ) : null}
+              {/* <MapView style={styles.map} /> */}
             </View>
           ) : (
             <SkeletonPlaceholder>
@@ -939,46 +1004,50 @@ const styles = StyleSheet.create({
   descTitle: {
     fontSize: Constants.headingtwo,
     fontWeight: Constants.Bold,
-    color: Constants.mainText,
+    color: Constants.Inverse,
+    paddingLeft: 2,
   },
   desctext: {
     margin: 5,
     marginLeft: 10,
+    fontFamily: Constants.fontFam,
     fontSize: 14,
     fontWeight: Constants.Boldtwo,
-    color: Constants.Secondary,
+    color: Constants.Inverse,
   },
   mapContainer: {
     alignItems: "center",
     justifyContent: "center",
-    width: "100%",
+    alignSelf: "center",
+    width: "98%",
     height: 450,
-    marginBottom: 70,
     paddingTop: 5,
   },
   mapInfo: {
     flexDirection: "column",
     alignSelf: "flex-start",
-    paddingLeft: "8%",
+    paddingLeft: 20,
     marginVertical: 10,
   },
   location: {
-    fontSize: Constants.headingone,
+    fontSize: Constants.headingtwo,
     fontWeight: Constants.Bold,
-    color: Constants.mainText,
+    color: Constants.Inverse,
   },
   venueOnMap: {
+    fontFamily: Constants.fontFam,
     fontSize: Constants.thirty,
-    color: Constants.mainTwo,
+    color: Constants.Inverse,
   },
   map: {
     width: "90%",
     height: "80%",
     justifyContent: "center",
     alignItems: "center",
-    borderRadius: 20,
-    marginBottom: 20,
+    borderRadius: 10,
+    marginBottom: 6,
   },
+
   ticketBtnContainer: {
     position: "absolute",
     bottom: 0,
